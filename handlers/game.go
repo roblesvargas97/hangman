@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/roblesvargas97/hangman/logic"
+	"github.com/roblesvargas97/hangman/models"
 )
 
 var game *logic.Game
@@ -13,10 +14,20 @@ func StartGame(w http.ResponseWriter, r *http.Request) {
 
 	game = logic.NewGame("golang")
 
+	gameState := models.GameState{
+		Word:     game.GetWordState(),
+		Mistakes: game.Mistakes,
+		MaxTries: game.MaxMistakes,
+		GameWon:  false,
+		GameLost: false,
+		Message:  "Game started!",
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Game started!",
-		"word":    game.GetWordState(),
+	json.NewEncoder(w).Encode(models.APIResponse{
+		Status:  "success",
+		Message: "Game started succesfully!",
+		Data:    gameState,
 	})
 
 }
@@ -39,25 +50,32 @@ func GuessLetter(w http.ResponseWriter, r *http.Request) {
 
 	result := game.GuessLetter(letter)
 
-	response := map[string]interface{}{
-		"word":     game.GetWordState(),
-		"mistakes": game.Mistakes,
-		"maxTries": game.MaxMistakes,
-		"correct":  result,
-		"gameWon":  game.IsWon(),
-		"gameLost": game.IsLost(),
+	gameState := models.GameState{
+		Word:     game.GetWordState(),
+		Mistakes: game.Mistakes,
+		MaxTries: game.MaxMistakes,
+		GameWon:  game.IsWon(),
+		GameLost: game.IsLost(),
 	}
 
 	if game.IsWon() {
-		response["message"] = "You won! 🎉"
+		gameState.Message = "You won! 🎉"
 	} else if game.IsLost() {
-		response["message"] = "Game over! The word was:" + game.Word
+		gameState.Message = "Game over! The word was:" + game.Word
 	} else {
-		response["message"] = "Keep guessing!"
+		if result {
+			gameState.Message = "Correct guess!"
+		} else {
+			gameState.Message = "Incorrect guess. Try again!"
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(models.APIResponse{
+		Status:  "success",
+		Message: "Letter proccessed succesfully",
+		Data:    gameState,
+	})
 
 }
 
