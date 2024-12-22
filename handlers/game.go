@@ -12,7 +12,8 @@ var game *logic.Game
 
 func StartGame(w http.ResponseWriter, r *http.Request) {
 
-	game = logic.NewGame("golang")
+	word := logic.RandomWord()
+	game = logic.NewGame(word)
 
 	gameState := models.GameState{
 		Word:     game.GetWordState(),
@@ -35,7 +36,7 @@ func StartGame(w http.ResponseWriter, r *http.Request) {
 func GuessLetter(w http.ResponseWriter, r *http.Request) {
 
 	//Validate if the game is not started
-	if game != nil {
+	if game == nil {
 
 		http.Error(w, "Game not started. Call /api/start first.", http.StatusBadRequest)
 		return
